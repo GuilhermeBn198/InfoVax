@@ -1,6 +1,4 @@
 import 'dart:convert';
-import 'dart:js_interop';
-
 import 'package:flutter/material.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
@@ -16,6 +14,7 @@ class MyApp extends StatelessWidget {
       title: 'Hospital Fridge Monitor',
       theme: ThemeData(
         primarySwatch: Colors.blue,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
       home: FridgeMonitor(),
     );
@@ -38,7 +37,7 @@ class _FridgeMonitorState extends State<FridgeMonitor> {
   String temperature = 'N/A';
   String humidity = 'N/A';
   String doorStatus = 'N/A';
-  String user = 'N/A'; // Adicionado usuário
+  String user = 'N/A';
 
   @override
   void initState() {
@@ -52,9 +51,6 @@ class _FridgeMonitorState extends State<FridgeMonitor> {
     client!.secure = true;
     client!.logging(on: true);
     client!.keepAlivePeriod = 20;
-    client!.onDisconnected = _onDisconnected;
-    client!.onConnected = _onConnected;
-    client!.onSubscribed = _onSubscribed;
 
     final connMessage = MqttConnectMessage()
         .withClientIdentifier('flutter_client')
@@ -65,84 +61,92 @@ class _FridgeMonitorState extends State<FridgeMonitor> {
 
     try {
       await client!.connect();
+      client!.subscribe(statusTopic, MqttQos.atMostOnce);
+      client!.updates!.listen(_onMessageReceived);
+      print('Connected to the broker');
     } catch (e) {
       print('Connection failed: $e');
       client!.disconnect();
     }
-
-    if (client!.connectionStatus!.state == MqttConnectionState.connected) {
-      client!.subscribe(statusTopic, MqttQos.atMostOnce);
-      client!.updates!.listen(_onMessageReceived);
-      print('Connected to the broker');
-    } else {
-      print('Connection failed: ${client!.connectionStatus}');
-    }
   }
 
-  void _onDisconnected() {
-    print('Disconnected from the broker');
-  }
+  void _onMessageReceived(List<MqttReceivedMessage<MqttMessage>> messages) {
+    final recMessage = messages.first.payload as MqttPublishMessage;
+    final payload =
+        MqttPublishPayload.bytesToStringAsString(recMessage.payload.message);
 
-  void _onConnected() {
-    print('Connected to the broker!!!!!!!!!!!!!!!!!!!!');
-  }
-
-  void _onSubscribed(String topic) {
-    print('Subscribed to topic: $topic');
-  }
-
-void _onMessageReceived(List<MqttReceivedMessage<MqttMessage>> messages) {
-  final recMessage = messages.first.payload as MqttPublishMessage;
-  final payload = MqttPublishPayload.bytesToStringAsString(recMessage.payload.message);
-
-  print('Mensagem recebida no tópico ${messages.first.topic}: $payload');
-
-  // Processa apenas mensagens do tópico 'esp32/refrigerator'
-  if (messages.first.topic == 'esp32/refrigerator') {
     try {
-      // Decodifica o payload JSON
       final data = jsonDecode(payload);
-      print(data.jsify());
       setState(() {
-        // Atualiza os valores com base no JSON recebido
         temperature = data['temperatura'].toString();
         humidity = data['umidade'].toString();
         doorStatus = data['estado_porta'];
         user = data['usuario'];
-
-        // Debug no console para verificar os valores recebidos
-        print('Temperatura: $temperature°C');
-        print('Umidade: $humidity%');
-        print('Estado da porta: $doorStatus');
-        print('Usuário: $user');
       });
     } catch (e) {
-      // Caso haja erro ao decodificar o JSON, exibe no console
-      print('Erro ao processar a mensagem JSON: $e');
+      print('Error processing message: $e');
     }
   }
-}
-
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Hospital Fridge Monitor'),
+        title: Text('Hospital Fridge Monitor 1'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Temperature: $temperature °C', style: TextStyle(fontSize: 20)),
-            SizedBox(height: 10),
-            Text('Humidity: $humidity %', style: TextStyle(fontSize: 20)),
-            SizedBox(height: 10),
-            Text('Door Status: $doorStatus', style: TextStyle(fontSize: 20)),
-            SizedBox(height: 10),
-            Text('User: $user', style: TextStyle(fontSize: 20)), // Exibe o usuário
+            _buildInfoCard(
+              title: 'Temperature',
+              value: '$temperature °C',
+              icon: Icons.thermostat,
+              color: Colors.redAccent,
+            ),
+            _buildInfoCard(
+              title: 'Humidity',
+              value: '$humidity %',
+              icon: Icons.water_drop,
+              color: Colors.blueAccent,
+            ),
+            _buildInfoCard(
+              title: 'Door Status',
+              value: doorStatus,
+              icon: Icons.door_front_door,
+              color: Colors.orangeAccent,
+            ),
+            _buildInfoCard(
+              title: 'User',
+              value: user,
+              icon: Icons.person,
+              color: Colors.greenAccent,
+            ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoCard({
+    required String title,
+    required String value,
+    required IconData icon,
+    required Color color,
+  }) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      elevation: 4,
+      child: ListTile(
+        leading: Icon(icon, size: 40, color: color),
+        title: Text(
+          title,
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        subtitle: Text(
+          value,
+          style: TextStyle(fontSize: 16),
         ),
       ),
     );
