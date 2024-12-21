@@ -15,13 +15,11 @@ InfoVax é um sistema de monitoramento que atua como um dashboard para exibir, d
 
 - Flutter: Framework para o desenvolvimento do dashboard multiplataforma (Android, iOS e web).
 
-- REST API ou WebSocket: Interface para comunicação e atualização dos dados recebidos pelo sistema.
-
-- Firebase ou SQLite: Armazenamento local ou na nuvem dos dados para consultas e históricos.
-
 ## Implementações Futuras
 
 - Alertas em tempo real: Notificações push no app ou via SMS para informação imediata em caso de irregularidades.
+
+- Firebase ou SQLite: Armazenamento local ou na nuvem dos dados para consultas e históricos.
 
 - Relatórios detalhados: Exibição de gráficos e análises históricas do desempenho dos refrigeradores.
 
