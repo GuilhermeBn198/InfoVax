@@ -14,14 +14,60 @@ class MyApp extends StatelessWidget {
       title: 'Hospital Fridge Monitor',
       theme: ThemeData(
         primarySwatch: Colors.blue,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: FridgeMonitor(),
+      home: HomeScreen(),
     );
   }
 }
 
+// Tela inicial que lista os refrigeradores
+class HomeScreen extends StatelessWidget {
+  final List<String> fridgeIds = [
+    'Refrigerator 1',
+    'Refrigerator 2',
+    'Refrigerator 3',
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Fridge Monitor - Home'),
+      ),
+      body: ListView.builder(
+        padding: const EdgeInsets.all(16.0),
+        itemCount: fridgeIds.length,
+        itemBuilder: (context, index) {
+          return Card(
+            elevation: 4,
+            margin: const EdgeInsets.only(bottom: 16.0),
+            child: ListTile(
+              title: Text(fridgeIds[index], style: TextStyle(fontSize: 18)),
+              leading: Icon(Icons.kitchen, color: Colors.blueAccent, size: 40),
+              trailing: Icon(Icons.arrow_forward_ios, color: Colors.grey),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        FridgeMonitor(fridgeId: fridgeIds[index]),
+                  ),
+                );
+              },
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+// Tela que exibe as informações de um refrigerador específico
 class FridgeMonitor extends StatefulWidget {
+  final String fridgeId;
+
+  FridgeMonitor({required this.fridgeId});
+
   @override
   _FridgeMonitorState createState() => _FridgeMonitorState();
 }
@@ -92,32 +138,32 @@ class _FridgeMonitorState extends State<FridgeMonitor> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Hospital Fridge Monitor 1'),
+        title: Text(widget.fridgeId),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _buildInfoCard(
+            _buildInfoContainer(
               title: 'Temperature',
               value: '$temperature °C',
               icon: Icons.thermostat,
               color: Colors.redAccent,
             ),
-            _buildInfoCard(
+            _buildInfoContainer(
               title: 'Humidity',
               value: '$humidity %',
               icon: Icons.water_drop,
               color: Colors.blueAccent,
             ),
-            _buildInfoCard(
+            _buildInfoContainer(
               title: 'Door Status',
               value: doorStatus,
               icon: Icons.door_front_door,
               color: Colors.orangeAccent,
             ),
-            _buildInfoCard(
+            _buildInfoContainer(
               title: 'User',
               value: user,
               icon: Icons.person,
@@ -129,25 +175,46 @@ class _FridgeMonitorState extends State<FridgeMonitor> {
     );
   }
 
-  Widget _buildInfoCard({
+  Widget _buildInfoContainer({
     required String title,
     required String value,
     required IconData icon,
     required Color color,
   }) {
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 16),
-      elevation: 4,
-      child: ListTile(
-        leading: Icon(icon, size: 40, color: color),
-        title: Text(
-          title,
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        subtitle: Text(
-          value,
-          style: TextStyle(fontSize: 16),
-        ),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.5),
+            blurRadius: 5,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 40, color: color),
+          SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  value,
+                  style: TextStyle(fontSize: 16),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
